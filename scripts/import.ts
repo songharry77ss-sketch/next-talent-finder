@@ -17,6 +17,14 @@ import { parseMember, EXCLUDE_PREFIX } from "../lib/parseMember";
 
 const DEFAULT_DIR = "넥스트 정보";
 
+// 원본 .md 에 '생일'이 없어 출생연도를 못 뽑는 멤버를 수동 보정.
+// (값을 알게 되면 여기에 채우면 됨. 예: 조혜진: 1999)
+const BIRTH_YEAR_OVERRIDES: Record<string, number> = {
+  // 조혜진: 1999,
+  // 배상일: 0000,
+  // 안지한: 0000,
+};
+
 /** 이름 기반 성별 추론 (데이터에 성별 필드가 없어 GPT로 1회 추정). */
 async function inferGenders(names: string[]): Promise<Record<string, string>> {
   const res = await openai.chat.completions.create({
@@ -75,6 +83,7 @@ async function main() {
 
   const payload = members.map((m, i) => ({
     ...m,
+    birth_year: m.birth_year ?? BIRTH_YEAR_OVERRIDES[m.name] ?? null,
     gender: genders[m.name] ?? null,
     profile_text: texts[i],
     embedding: embeddings[i],
